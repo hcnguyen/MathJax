@@ -712,7 +712,7 @@
           if (bbox.lw < 0) {dx = bbox.lw; HTMLCSS.createBlank(span,-dx,true); l = 0}
           if (bbox.rw > bbox.w) {HTMLCSS.createBlank(span,bbox.rw-bbox.w+.1)}
         }
-        if (!this.msieClipRectBug && !bbox.noclip && !noclip) {
+        if (!this.clipRectBug && !bbox.noclip && !noclip) {
           var dd = 3/this.em;
           var H = (bbox.H == null ? bbox.h : bbox.H), D = (bbox.D == null ? bbox.d : bbox.D);
           var t = HH - H - dd, b = HH + D + dd, l = bbox.lw - 3*dd, r = 1000;
@@ -2143,11 +2143,11 @@
         msieInlineBlockAlignBug: (!isIE8 || quirks),
         msieVerticalAlignBug: (isIE8 && !quirks),
         msiePlaceBoxBug: (isIE8 && !quirks),
-        msieClipRectBug: !isIE8,
         msieNegativeSpaceBug: quirks,
-        negativeSkipBug: true,
         msieIE6: !isIE7,
         msieItalicWidthBug: true,
+        clipRectBug: !isIE8,
+        negativeSkipBug: true,
         zeroWidthBug: true,
         FontFaceBug: true,
         allowWebFonts: "eot"
@@ -2230,6 +2230,7 @@
         zeroWidthBug: true,
         FontFaceBug: true,
         PaddingWidthBug: true,
+        clipRectBug: true,
         allowWebFonts: (browser.versionAtLeast("10.0") && !browser.isMini ? "otf" : false),
         //
         //  Opera doesn't display many STIX characters, so remove it
