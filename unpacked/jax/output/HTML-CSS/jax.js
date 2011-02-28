@@ -280,6 +280,7 @@
         this.fontInUse = font; this.fontDir += "/" + font; this.webfontDir += "/" + font;
         if (!this.require) {this.require = []}
         this.require.push(this.fontDir+"/fontdata.js");
+        if (this.loadAllCSS) {this.require.push(HTMLCSS.webfontDir+"/css/MathJax-All.css")}
         if (this.imgFonts) {
           this.require.push(this.directory+"/imageFonts.js");
           HUB.Startup.signal.Post("HTML-CSS Jax - using image fonts");
@@ -472,6 +473,7 @@
         FONTS[name].family = name;
         if (HTMLCSS.msieFontCSSBug) {FONTS[name].family += "-Web"}
       }
+      if (HTMLCSS.allowWebFonts === "css") return;
       return AJAX.Styles({"@font-face":this.Font.fontFace(name)});
     },
 
@@ -1077,6 +1079,7 @@
         font.family = font.name;
         if (HTMLCSS.msieFontCSSBug) {font.family += "-Web"}
       }
+      if (HTMLCSS.allowWebFonts === "css" && !font.cssLoaded) {this.loadCSSfont(font)}
       HUB.RestartAfter(this.Font.loadWebFont(font));
     },
     loadWebFontError: function (font,done) {
@@ -1095,6 +1098,20 @@
       } else {
         this.allowWebFonts = false;
         done();
+      }
+    },
+    loadCSSfont: function (font) {
+      font.cssLoaded = true;
+      if (this.loadAllCSS) return;
+      var name = font.name.replace(/-bold-?/,"-Bold").replace(/-i/,"-I");
+      if (!name.match(/-/)) {name += "-Regular"}
+      var css = AJAX.fileURL(HTMLCSS.webfontDir+"/css/"+name+".css");
+      if (!this.fontSheet)
+        {this.fontSheet = HTMLCSS.addElement(document.getElementsByTagName("head")[0],"style")}
+      if (MathJax.Hub.Browser.isMSIE) {
+        this.fontSheet.styleSheet.addImport(css);
+      } else {
+        this.fontSheet.sheet.insertRule("@import url('"+css+"');",this.fontSheet.sheet.length);
       }
     },
 
@@ -2139,6 +2156,9 @@
         HTMLCSS.config.styles[".MathJax .MathJax_HitBox"]["background-color"] = "white";
         HTMLCSS.config.styles[".MathJax .MathJax_HitBox"].opacity = 0
         HTMLCSS.config.styles[".MathJax .MathJax_HitBox"].filter = "alpha(opacity=0)";
+        var webFonts = ((document.documentMode||0) >= 9 ? "woff" : "eot");
+        if (document.location.protocol === "file:" && !HUB.config.root.match(/^file:/) &&
+            webFonts === "woff") {webFonts = "css"}
         // FIXME:  work out tests for these?
         HTMLCSS.Augment({
           getMarginScale: HTMLCSS.getMSIEmarginScale,
@@ -2162,7 +2182,7 @@
           zeroWidthBug: true,
           FontFaceBug: true,
           msieFontCSSBug: browser.isIE9,
-          allowWebFonts: "eot"
+          allowWebFonts: webFonts
         });
       },
 
@@ -2171,12 +2191,17 @@
         if (browser.versionAtLeast("3.5")) {
           var root = String(document.location).replace(/[^\/]*$/,"");
           if (document.location.protocol !== "file:" ||
-              (HUB.config.root+"/").substr(0,root.length) === root) {webFonts = "otf"}
+              (HUB.config.root+"/").substr(0,root.length) === root) {
+            webFonts = (browser.versionAtLeast("3.6") ? "woff" : "otf");
+          } else {
+            webFonts = "css"
+          }
         }
         HTMLCSS.Augment({
           useProcessingFrame: true,
           ffVerticalAlignBug: true,
           AccentBug: true,
+          loadAllCSS: (webFonts === "css"), // FF is buggy if they load individually
           allowWebFonts: webFonts
         });
       },
@@ -2208,7 +2233,7 @@
           safariVerticalAlignBug: !v3p1,
           safariTextNodeBug: !v3p0,
           safariWebFontSerif: ["serif"],
-          allowWebFonts: (v3p1 && !forceImages ? (browser.isPC ? "svg" : "otf") : false)
+          allowWebFonts: (v3p1 && !forceImages ? "otf" : false)
         });
         if (forceImages) {
           //  Force image mode for iOS prior to 4.2 and Droid prior to 2.2
@@ -2225,7 +2250,7 @@
           rfuzz: .05,
           AccentBug: true,
           AdjustSurd: true,
-          allowWebFonts: "svg",
+          allowWebFonts: (browser.versionAtLeast("4.0") ? "otf" : "svg"),
           safariNegativeSpaceBug: true,
           safariWebFontSerif: [""]
         });

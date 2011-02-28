@@ -1737,8 +1737,10 @@
         }
       }
       if (!HTMLCSS.config.preloadWebFonts) {HTMLCSS.config.preloadWebFonts = []}
-      HTMLCSS.config.preloadWebFonts.push(MAIN,ITALIC,SIZE1);
-      if (faces.length) {HTMLCSS.config.styles["@font-face"] = faces}
+      if (HTMLCSS.allowWebFonts !== "css") {
+        HTMLCSS.config.preloadWebFonts.push(MAIN,ITALIC,SIZE1);
+        if (faces.length) {HTMLCSS.config.styles["@font-face"] = faces}
+      }
     } else if (AVAIL && AVAIL.length) {
       for (name in FONTS) {
         if (FONTS[name].family && HTMLCSS.Font.testFont(FONTS[name])) {
